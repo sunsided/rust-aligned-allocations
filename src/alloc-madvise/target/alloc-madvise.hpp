@@ -20,6 +20,7 @@ struct Memory {
 
 extern "C" {
 
+/// Gets a git version reference in order to identify the library version.
 const char *git_version();
 
 /// Allocates memory of the specified number of bytes.
