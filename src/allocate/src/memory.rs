@@ -1,7 +1,6 @@
 use crate::AllocResult;
 use std::ffi::c_void;
 
-#[repr(C)]
 pub struct Memory {
     pub status: AllocResult,
     pub flags: u32,

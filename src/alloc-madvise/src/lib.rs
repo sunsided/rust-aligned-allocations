@@ -1,4 +1,4 @@
-mod lib_extern;
+mod ffi;
 
 use allocate::{alloc_aligned, alloc_flags, free_aligned, get_alignment, AllocResult, Memory};
 use libc::madvise;

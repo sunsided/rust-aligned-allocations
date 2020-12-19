@@ -5,3 +5,14 @@ pub enum AllocResult {
     Empty = 1 << 0,
     InvalidAlignment = 1 << 1,
 }
+
+impl From<u32> for AllocResult {
+    fn from(value: u32) -> Self {
+        match value {
+            0 => AllocResult::Ok,
+            1 => AllocResult::Empty,
+            2 => AllocResult::InvalidAlignment,
+            _ => panic!(),
+        }
+    }
+}
