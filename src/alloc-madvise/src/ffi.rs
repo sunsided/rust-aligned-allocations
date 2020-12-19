@@ -8,7 +8,7 @@ pub struct Memory {
     /// Allocation flags. Used internally when calling free.
     pub flags: u32,
     /// The number of allocated bytes. Used internally when calling free.
-    pub num_bytes: usize,
+    pub num_bytes: u32,
     /// The address of the allocated memory.
     pub address: *mut std::ffi::c_void,
 }
@@ -18,12 +18,12 @@ pub struct Memory {
 /// The optimal alignment will be determined by the number of bytes provided.
 /// If the amount of bytes is a multiple of 2MB, Huge/Large Page support is enabled.
 #[no_mangle]
-pub unsafe extern "C" fn allocate(num_bytes: usize, clear: bool) -> Memory {
-    let memory = crate::allocate(num_bytes, clear);
+pub unsafe extern "C" fn allocate_block(num_bytes: u32, sequential: bool, clear: bool) -> Memory {
+    let memory = crate::allocate(num_bytes as usize, sequential, clear);
     Memory {
         status: memory.status as u32,
         flags: memory.flags,
-        num_bytes: memory.num_bytes,
+        num_bytes: memory.num_bytes as u32,
         address: memory.address,
     }
 }
@@ -32,11 +32,12 @@ pub unsafe extern "C" fn allocate(num_bytes: usize, clear: bool) -> Memory {
 ///
 /// The memory instance is required to be created by `allocate`.
 #[no_mangle]
-pub unsafe extern "C" fn free(memory: Memory) {
+pub unsafe extern "C" fn free_block(memory: Memory) {
+    // NOTE: If this method is called "free", it'll shadow the version from clib ... don't do that.
     let wrapped = MemorySafe::new(
         AllocResult::from(memory.status),
         memory.flags,
-        memory.num_bytes,
+        memory.num_bytes as usize,
         memory.address,
     );
 

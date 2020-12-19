@@ -13,7 +13,7 @@ struct Memory {
   /// Allocation flags. Used internally when calling free.
   uint32_t flags;
   /// The number of allocated bytes. Used internally when calling free.
-  uintptr_t num_bytes;
+  uint32_t num_bytes;
   /// The address of the allocated memory.
   void *address;
 };
@@ -24,12 +24,12 @@ extern "C" {
 ///
 /// The optimal alignment will be determined by the number of bytes provided.
 /// If the amount of bytes is a multiple of 2MB, Huge/Large Page support is enabled.
-Memory allocate(uintptr_t num_bytes, bool clear);
+Memory allocate_block(uint32_t num_bytes, bool sequential, bool clear);
 
 /// Frees memory of the specified number of bytes.
 ///
 /// The memory instance is required to be created by `allocate`.
-void free(Memory memory);
+void free_block(Memory memory);
 
 } // extern "C"
 

@@ -8,7 +8,7 @@ use std::ptr::null_mut;
 ///
 /// The optimal alignment will be determined by the number of bytes provided.
 /// If the amount of bytes is a multiple of 2MB, Huge/Large Page support is enabled.
-pub unsafe fn allocate(num_bytes: usize, clear: bool) -> Memory {
+pub unsafe fn allocate(num_bytes: usize, sequential: bool, clear: bool) -> Memory {
     if num_bytes == 0 {
         return Memory::default();
     }
@@ -21,14 +21,28 @@ pub unsafe fn allocate(num_bytes: usize, clear: bool) -> Memory {
 
     let ptr: *mut std::ffi::c_void = memory.unwrap().as_ptr().cast::<std::ffi::c_void>();
 
-    let flags = if alignment.use_huge_pages {
-        // See https://www.man7.org/linux/man-pages/man2/madvise.2.html
-        // SAFETY: `ptr` came from alloc_aligned(num_bytes, alignment)
-        madvise(ptr, num_bytes, libc::MADV_HUGEPAGE);
-        alloc_flags::HUGE_PAGES
+    let mut advice = if sequential {
+        libc::MADV_SEQUENTIAL
+    } else {
+        libc::MADV_NORMAL
+    };
+
+    let mut flags = if sequential {
+        alloc_flags::SEQUENTIAL
     } else {
         alloc_flags::NONE
     };
+
+    if alignment.use_huge_pages {
+        advice |= libc::MADV_HUGEPAGE;
+        flags |= alloc_flags::HUGE_PAGES;
+    };
+
+    if advice != 0 {
+        // See https://www.man7.org/linux/man-pages/man2/madvise.2.html
+        // SAFETY: `ptr` came from alloc_aligned(num_bytes, alignment)
+        madvise(ptr, num_bytes, advice);
+    }
 
     Memory::new(AllocResult::Ok, flags, num_bytes, ptr)
 }
@@ -71,7 +85,7 @@ mod tests {
     #[test]
     fn alloc_4mb_is_2mb_aligned_hugepage() {
         const SIZE: usize = TWO_MEGABYTES * 2;
-        let memory = unsafe { allocate(SIZE, true) };
+        let memory = unsafe { allocate(SIZE, true, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
@@ -80,6 +94,30 @@ mod tests {
             memory.flags & alloc_flags::HUGE_PAGES,
             alloc_flags::HUGE_PAGES
         );
+        assert_eq!(
+            memory.flags & alloc_flags::SEQUENTIAL,
+            alloc_flags::SEQUENTIAL
+        );
+
+        unsafe { free(memory) };
+    }
+
+    #[test]
+    fn alloc_4mb_nonsequential_is_2mb_aligned_hugepage() {
+        const SIZE: usize = TWO_MEGABYTES * 2;
+        let memory = unsafe { allocate(SIZE, false, false) };
+
+        assert_eq!(memory.status, AllocResult::Ok);
+        assert_ne!(memory.address, null_mut());
+        assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
+        assert_eq!(
+            memory.flags & alloc_flags::HUGE_PAGES,
+            alloc_flags::HUGE_PAGES
+        );
+        assert_ne!(
+            memory.flags & alloc_flags::SEQUENTIAL,
+            alloc_flags::SEQUENTIAL
+        );
 
         unsafe { free(memory) };
     }
@@ -87,7 +125,7 @@ mod tests {
     #[test]
     fn alloc_2mb_is_2mb_aligned_hugepage() {
         const SIZE: usize = TWO_MEGABYTES;
-        let memory = unsafe { allocate(SIZE, true) };
+        let memory = unsafe { allocate(SIZE, true, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
@@ -103,7 +141,7 @@ mod tests {
     #[test]
     fn alloc_1mb_is_64b_aligned() {
         const SIZE: usize = TWO_MEGABYTES / 2;
-        let memory = unsafe { allocate(SIZE, true) };
+        let memory = unsafe { allocate(SIZE, true, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
@@ -119,7 +157,7 @@ mod tests {
     #[test]
     fn alloc_63kb_is_64b_aligned() {
         const SIZE: usize = 63 * 1024;
-        let memory = unsafe { allocate(SIZE, true) };
+        let memory = unsafe { allocate(SIZE, true, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
@@ -135,7 +173,7 @@ mod tests {
     #[test]
     fn alloc_64kb_is_64b_aligned() {
         const SIZE: usize = 64 * 1024;
-        let memory = unsafe { allocate(SIZE, true) };
+        let memory = unsafe { allocate(SIZE, true, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
@@ -151,7 +189,7 @@ mod tests {
     #[test]
     fn alloc_0b_is_not_allocated() {
         const SIZE: usize = 0;
-        let memory = unsafe { allocate(SIZE, true) };
+        let memory = unsafe { allocate(SIZE, true, true) };
 
         assert_eq!(memory.status, AllocResult::Empty);
         assert_eq!(memory.address, null_mut());

@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/alloc-madvise/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/allocate/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/src/alloc-madvise/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
