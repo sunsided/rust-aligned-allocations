@@ -1,4 +1,7 @@
 use allocate::{AllocResult, Memory as MemorySafe};
+use git_version::git_version;
+
+const GIT_VERSION: &str = git_version!();
 
 /// Information about the allocated memory.
 #[repr(C)]
@@ -11,6 +14,12 @@ pub struct Memory {
     pub num_bytes: u32,
     /// The address of the allocated memory.
     pub address: *mut std::ffi::c_void,
+}
+
+/// Gets a git version reference in order to identify the library version.
+#[no_mangle]
+pub unsafe extern "C" fn git_version() -> *const libc::c_char {
+    std::ffi::CString::new(GIT_VERSION).unwrap().into_raw()
 }
 
 /// Allocates memory of the specified number of bytes.

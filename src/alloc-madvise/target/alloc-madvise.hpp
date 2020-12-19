@@ -20,6 +20,8 @@ struct Memory {
 
 extern "C" {
 
+const char *git_version();
+
 /// Allocates memory of the specified number of bytes.
 ///
 /// The optimal alignment will be determined by the number of bytes provided.

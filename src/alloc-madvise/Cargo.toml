@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 [dependencies]
 libc = "0.2.80"
 allocate = { path = "../allocate" }
+git-version = "0.3.4"
 
 [build-dependencies]
 cbindgen = "0.15.0"
