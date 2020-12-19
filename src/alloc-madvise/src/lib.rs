@@ -1,57 +1,36 @@
-use allocate::{alloc_aligned, free_aligned, get_alignment, AllocFlags, AllocResult};
-use libc::{c_void, madvise};
-use std::ptr::null_mut;
+mod lib_extern;
 
-#[repr(C)]
-pub struct Memory {
-    status: AllocResult,
-    flags: AllocFlags,
-    num_bytes: usize,
-    address: *mut c_void,
-}
+use allocate::{alloc_aligned, alloc_flags, free_aligned, get_alignment, AllocResult, Memory};
+use libc::madvise;
+use std::ptr::null_mut;
 
 /// Allocates memory of the specified number of bytes.
 ///
 /// The optimal alignment will be determined by the number of bytes provided.
 /// If the amount of bytes is a multiple of 2MB, Huge/Large Page support is enabled.
-pub unsafe fn allocate(num_bytes: usize) -> Memory {
+pub unsafe fn allocate(num_bytes: usize, clear: bool) -> Memory {
     if num_bytes == 0 {
-        return Memory {
-            status: AllocResult::Empty,
-            flags: AllocFlags::NONE,
-            num_bytes: 0,
-            address: null_mut(),
-        };
+        return Memory::default();
     }
 
     let alignment = get_alignment(num_bytes);
-    let memory = alloc_aligned(num_bytes, alignment.alignment);
+    let memory = alloc_aligned(num_bytes, alignment.alignment, clear);
     if memory.is_none() {
-        return Memory {
-            status: AllocResult::InvalidAlignment,
-            flags: AllocFlags::NONE,
-            num_bytes: 0,
-            address: null_mut(),
-        };
+        return Memory::from_error(AllocResult::InvalidAlignment);
     }
 
-    let ptr: *mut c_void = memory.unwrap().as_ptr().cast::<c_void>();
+    let ptr: *mut std::ffi::c_void = memory.unwrap().as_ptr().cast::<std::ffi::c_void>();
 
     let flags = if alignment.use_huge_pages {
         // See https://www.man7.org/linux/man-pages/man2/madvise.2.html
         // SAFETY: `ptr` came from alloc_aligned(num_bytes, alignment)
         madvise(ptr, num_bytes, libc::MADV_HUGEPAGE);
-        AllocFlags::HUGE_PAGES
+        alloc_flags::HUGE_PAGES
     } else {
-        AllocFlags::NONE
+        alloc_flags::NONE
     };
 
-    Memory {
-        status: AllocResult::Ok,
-        flags,
-        num_bytes,
-        address: ptr,
-    }
+    Memory::new(AllocResult::Ok, flags, num_bytes, ptr)
 }
 
 /// Frees memory of the specified number of bytes.
@@ -68,7 +47,7 @@ pub unsafe fn free(memory: Memory) {
     debug_assert_ne!(memory.address, null_mut());
     let ptr = ::core::ptr::NonNull::new(memory.address);
 
-    if memory.flags.contains(AllocFlags::HUGE_PAGES) {
+    if (memory.flags & alloc_flags::HUGE_PAGES) == alloc_flags::HUGE_PAGES {
         debug_assert!(alignment.use_huge_pages);
 
         // See https://www.man7.org/linux/man-pages/man2/madvise.2.html
@@ -92,12 +71,15 @@ mod tests {
     #[test]
     fn alloc_4mb_is_2mb_aligned_hugepage() {
         const SIZE: usize = TWO_MEGABYTES * 2;
-        let memory = unsafe { allocate(SIZE) };
+        let memory = unsafe { allocate(SIZE, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
-        assert!(memory.flags.contains(AllocFlags::HUGE_PAGES));
+        assert_eq!(
+            memory.flags & alloc_flags::HUGE_PAGES,
+            alloc_flags::HUGE_PAGES
+        );
 
         unsafe { free(memory) };
     }
@@ -105,12 +87,15 @@ mod tests {
     #[test]
     fn alloc_2mb_is_2mb_aligned_hugepage() {
         const SIZE: usize = TWO_MEGABYTES;
-        let memory = unsafe { allocate(SIZE) };
+        let memory = unsafe { allocate(SIZE, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
-        assert!(memory.flags.contains(AllocFlags::HUGE_PAGES));
+        assert_eq!(
+            memory.flags & alloc_flags::HUGE_PAGES,
+            alloc_flags::HUGE_PAGES
+        );
 
         unsafe { free(memory) };
     }
@@ -118,12 +103,15 @@ mod tests {
     #[test]
     fn alloc_1mb_is_64b_aligned() {
         const SIZE: usize = TWO_MEGABYTES / 2;
-        let memory = unsafe { allocate(SIZE) };
+        let memory = unsafe { allocate(SIZE, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
-        assert!(!memory.flags.contains(AllocFlags::HUGE_PAGES));
+        assert_ne!(
+            memory.flags & alloc_flags::HUGE_PAGES,
+            alloc_flags::HUGE_PAGES
+        );
 
         unsafe { free(memory) };
     }
@@ -131,12 +119,15 @@ mod tests {
     #[test]
     fn alloc_63kb_is_64b_aligned() {
         const SIZE: usize = 63 * 1024;
-        let memory = unsafe { allocate(SIZE) };
+        let memory = unsafe { allocate(SIZE, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
-        assert!(!memory.flags.contains(AllocFlags::HUGE_PAGES));
+        assert_ne!(
+            memory.flags & alloc_flags::HUGE_PAGES,
+            alloc_flags::HUGE_PAGES
+        );
 
         unsafe { free(memory) };
     }
@@ -144,12 +135,15 @@ mod tests {
     #[test]
     fn alloc_64kb_is_64b_aligned() {
         const SIZE: usize = 64 * 1024;
-        let memory = unsafe { allocate(SIZE) };
+        let memory = unsafe { allocate(SIZE, true) };
 
         assert_eq!(memory.status, AllocResult::Ok);
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
-        assert!(!memory.flags.contains(AllocFlags::HUGE_PAGES));
+        assert_ne!(
+            memory.flags & alloc_flags::HUGE_PAGES,
+            alloc_flags::HUGE_PAGES
+        );
 
         unsafe { free(memory) };
     }
@@ -157,11 +151,14 @@ mod tests {
     #[test]
     fn alloc_0b_is_not_allocated() {
         const SIZE: usize = 0;
-        let memory = unsafe { allocate(SIZE) };
+        let memory = unsafe { allocate(SIZE, true) };
 
         assert_eq!(memory.status, AllocResult::Empty);
         assert_eq!(memory.address, null_mut());
-        assert!(!memory.flags.contains(AllocFlags::HUGE_PAGES));
+        assert_ne!(
+            memory.flags & alloc_flags::HUGE_PAGES,
+            alloc_flags::HUGE_PAGES
+        );
 
         // We're still calling free in this test because it shouldn't panic.
         unsafe { free(memory) };

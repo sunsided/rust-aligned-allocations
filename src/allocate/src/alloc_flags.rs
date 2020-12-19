@@ -1,6 +1,2 @@
-bitflags! {
-    pub struct AllocFlags: u32 {
-        const NONE = 0;
-        const HUGE_PAGES = 1 << 0;
-    }
-}
+pub const NONE: u32 = 0;
+pub const HUGE_PAGES: u32 = 1 << 0;

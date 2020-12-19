@@ -2,7 +2,11 @@ use ::core::ptr;
 use ::std::alloc; // or extern crate alloc; use ::alloc::alloc;
 
 // https://users.rust-lang.org/t/how-can-i-allocate-aligned-memory-in-rust/33293/6
-pub fn alloc_aligned(num_bytes: usize, alignment: usize) -> Option<ptr::NonNull<libc::c_void>> {
+pub fn alloc_aligned(
+    num_bytes: usize,
+    alignment: usize,
+    clear: bool,
+) -> Option<ptr::NonNull<std::ffi::c_void>> {
     if num_bytes == 0 {
         return None;
     }
@@ -12,10 +16,15 @@ pub fn alloc_aligned(num_bytes: usize, alignment: usize) -> Option<ptr::NonNull<
         .ok()?;
 
     let address = ptr::NonNull::new(unsafe {
-        // SAFETY: numbytes != 0
-        alloc::alloc(layout)
+        if clear {
+            // SAFETY: numbytes != 0
+            alloc::alloc_zeroed(layout)
+        } else {
+            // SAFETY: numbytes != 0
+            alloc::alloc(layout)
+        }
     })?
-    .cast::<libc::c_void>();
+    .cast::<std::ffi::c_void>();
 
     return Some(address);
 }
@@ -24,7 +33,7 @@ pub fn alloc_aligned(num_bytes: usize, alignment: usize) -> Option<ptr::NonNull<
 ///
 ///   - `ptr`, when `NonNull`, must be a value returned by `alloc(numbytes, alignment)`
 pub unsafe fn free_aligned(
-    ptr: Option<ptr::NonNull<libc::c_void>>,
+    ptr: Option<ptr::NonNull<std::ffi::c_void>>,
     num_bytes: usize,
     alignment: usize,
 ) {
