@@ -145,6 +145,22 @@ impl Memory {
         debug_assert!(self.num_bytes > 0 || self.address == null_mut());
         self.num_bytes == 0
     }
+
+    /// Returns a pointer to the data buffer.
+    ///
+    /// ## Returns
+    /// A valid pointer.
+    pub fn as_ptr(&self) -> *const c_void {
+        self.address.cast_const()
+    }
+
+    /// Returns a mutable pointer to the data buffer.
+    ///
+    /// ## Returns
+    /// A valid pointer.
+    pub fn as_ptr_mut(&mut self) -> *mut c_void {
+        self.address
+    }
 }
 
 impl Default for Memory {
@@ -164,13 +180,13 @@ macro_rules! impl_asref {
     ($type:ident) => {
         impl AsRef<$type> for Memory {
             fn as_ref(&self) -> &$type {
-                unsafe { &*(self.address as *const $type) }
+                unsafe { &*self.address.cast() }
             }
         }
 
         impl AsMut<$type> for Memory {
             fn as_mut(&mut self) -> &mut $type {
-                unsafe { &mut *(self.address as *mut $type) }
+                unsafe { &mut *self.address.cast() }
             }
         }
     };
