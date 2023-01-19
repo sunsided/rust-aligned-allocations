@@ -1,19 +1,21 @@
 use ::core::ptr;
-use ::std::alloc; // or extern crate alloc; use ::alloc::alloc;
+use ::std::alloc;
+use crate::alloc_result::AllocationError;
 
 // https://users.rust-lang.org/t/how-can-i-allocate-aligned-memory-in-rust/33293/6
 pub fn alloc_aligned(
     num_bytes: usize,
     alignment: usize,
     clear: bool,
-) -> Option<ptr::NonNull<std::ffi::c_void>> {
+) -> Result<ptr::NonNull<std::ffi::c_void>, AllocationError> {
     if num_bytes == 0 {
-        return None;
+        return Err(AllocationError::EmptyAllocation);
     }
 
-    let layout = alloc::Layout::from_size_align(num_bytes, alignment)
-        .map_err(|err| eprintln!("Memory layout error: {}", err))
-        .ok()?;
+    let layout = match alloc::Layout::from_size_align(num_bytes, alignment) {
+        Err(e) => return Err(AllocationError::InvalidAlignment(e)),
+        Ok(layout) => layout
+    };
 
     let address = ptr::NonNull::new(unsafe {
         if clear {
@@ -23,10 +25,10 @@ pub fn alloc_aligned(
             // SAFETY: numbytes != 0
             alloc::alloc(layout)
         }
-    })?
+    }).expect("ptr is null")
     .cast::<std::ffi::c_void>();
 
-    return Some(address);
+    return Ok(address);
 }
 
 /// # Safety
