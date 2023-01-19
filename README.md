@@ -15,6 +15,18 @@ fn main() {
 
     assert_ne!(memory.address, std::ptr::null_mut());
     assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
+
+    // Get a reference to a mutable slice.
+    let data: &mut [f32] = memory.as_mut();
+    data[0] = 1.234;
+    data[1] = 5.678;
+
+    // Get a reference to an immutable slice.
+    let reference: &[f32] = memory.as_ref();
+    assert_eq!(reference[0], 1.234);
+    assert_eq!(reference[1], 5.678);
+    assert_eq!(reference[2], 0.0);
+    assert_eq!(reference.len(), memory.len() / std::mem::size_of::<f32>());
 }
 ```
 

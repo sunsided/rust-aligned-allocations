@@ -15,6 +15,28 @@ const ALLOC_FLAGS_HUGE_PAGES: u32 = 1 << 0;
 const ALLOC_FLAGS_SEQUENTIAL: u32 = 1 << 1;
 
 /// Allocated memory.
+///
+/// ## Example
+/// ```
+/// # use alloc_madvise::Memory;
+/// const FOUR_MEGABYTES: usize = 4 * 1024 * 1024;
+///
+/// // Allocate 2 MiB of aligned, zeroed-out, sequential read memory.
+/// // The memory will be automatically freed when it leaves scope.
+/// let mut memory = Memory::allocate(FOUR_MEGABYTES, true, true).unwrap();
+///
+/// // Get a reference to a mutable slice.
+/// let data: &mut [f32] = memory.as_mut();
+/// data[0] = 1.234;
+/// data[1] = 5.678;
+///
+/// // Get a reference to an immutable slice.
+/// let reference: &[f32] = memory.as_ref();
+/// assert_eq!(reference[0], 1.234);
+/// assert_eq!(reference[1], 5.678);
+/// assert_eq!(reference[2], 0.0);
+/// assert_eq!(reference.len(), memory.len() / std::mem::size_of::<f32>());
+/// ```
 #[derive(Debug)]
 pub struct Memory {
     pub(crate) flags: u32,
@@ -150,6 +172,7 @@ impl Memory {
     ///
     /// ## Returns
     /// A valid pointer.
+    #[inline(always)]
     pub fn as_ptr(&self) -> *const c_void {
         self.address.cast_const()
     }
@@ -158,6 +181,7 @@ impl Memory {
     ///
     /// ## Returns
     /// A valid pointer.
+    #[inline(always)]
     pub fn as_ptr_mut(&mut self) -> *mut c_void {
         self.address
     }
@@ -176,30 +200,34 @@ impl Drop for Memory {
 }
 
 /// Implements AsRef and AsMut
-macro_rules! impl_asref {
+macro_rules! impl_asref_slice {
     ($type:ty) => {
-        impl AsRef<$type> for Memory {
-            fn as_ref(&self) -> &$type {
-                unsafe { &*self.address.cast() }
+        impl AsRef<[$type]> for Memory {
+            fn as_ref(&self) -> &[$type] {
+                let ptr: *const $type = self.address.cast();
+                let len = self.num_bytes / std::mem::size_of::<$type>();
+                unsafe { &*std::ptr::slice_from_raw_parts(ptr, len) }
             }
         }
 
-        impl AsMut<$type> for Memory {
-            fn as_mut(&mut self) -> &mut $type {
-                unsafe { &mut *self.address.cast() }
+        impl AsMut<[$type]> for Memory {
+            fn as_mut(&mut self) -> &mut [$type] {
+                let ptr: *mut $type = self.address.cast();
+                let len = self.num_bytes / std::mem::size_of::<$type>();
+                unsafe { &mut *std::ptr::slice_from_raw_parts_mut(ptr, len) }
             }
         }
     };
     ($first:ty, $($rest:ty),+) => {
-        impl_asref!($first);
-        impl_asref!($($rest),+);
+        impl_asref_slice!($first);
+        impl_asref_slice!($($rest),+);
     };
 }
 
-impl_asref!(c_void);
-impl_asref!(i8, u8, i16, u16, i32, u32, i64, u64);
-impl_asref!(isize, usize);
-impl_asref!(f32, f64);
+impl_asref_slice!(c_void);
+impl_asref_slice!(i8, u8, i16, u16, i32, u32, i64, u64);
+impl_asref_slice!(isize, usize);
+impl_asref_slice!(f32, f64);
 
 #[cfg(test)]
 mod tests {
@@ -319,14 +347,15 @@ mod tests {
         const SIZE: usize = TWO_MEGABYTES * 2;
         let mut memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
-        let addr: *mut u8 = memory.address as *mut _ as *mut u8;
+        let addr: *mut u8 = memory.as_ptr_mut() as *mut u8;
         unsafe {
             *addr = 0x42;
         }
 
-        let reference: &u8 = memory.as_ref();
-        let value = *reference;
-        assert_eq!(value, 0x42);
+        let reference: &[u8] = memory.as_ref();
+        assert_eq!(reference[0], 0x42);
+        assert_eq!(reference[1], 0x00);
+        assert_eq!(reference.len(), memory.len());
     }
 
     #[test]
@@ -334,11 +363,14 @@ mod tests {
         const SIZE: usize = TWO_MEGABYTES * 2;
         let mut memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
-        let addr: &mut f32 = memory.as_mut();
-        *addr = 1.234;
+        let addr: &mut [f32] = memory.as_mut();
+        addr[0] = 1.234;
+        addr[1] = 5.678;
 
-        let reference: &f32 = memory.as_ref();
-        let value = *reference;
-        assert_eq!(value, 1.234);
+        let reference: &[f32] = memory.as_ref();
+        assert_eq!(reference[0], 1.234);
+        assert_eq!(reference[1], 5.678);
+        assert_eq!(reference[2], 0.0);
+        assert_eq!(reference.len(), memory.len() / std::mem::size_of::<f32>());
     }
 }

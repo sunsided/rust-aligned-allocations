@@ -7,8 +7,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Added `AsRef` and `AsMut` for primitive type mappings into
-  `Memory`.
+- Added `AsRef` and `AsMut` for primitive type slice mappings into `Memory`.
 
 ## 0.2.0 - 2023-01-19
 
