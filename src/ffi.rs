@@ -15,10 +15,12 @@ pub struct Memory {
     pub address: *mut std::ffi::c_void,
 }
 
+pub static VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), "\0");
+
 /// Gets a version reference in order to identify the library version.
 #[no_mangle]
 pub unsafe extern "C" fn version() -> *const libc::c_char {
-    std::ffi::CString::new(env!("CARGO_PKG_VERSION")).unwrap().into_raw()
+    VERSION.as_ptr() as *const libc::c_char
 }
 
 /// Allocates memory of the specified number of bytes.
