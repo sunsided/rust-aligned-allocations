@@ -7,6 +7,13 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added `AsRef` and `AsMut` for primitive type mappings into
+  `Memory`.
+
+## 0.2.0 - 2023-01-19
+
+### Added
+
 - Added the `alloc-madvise` library which dynamically aligns to 2 MB boundaries
   and signals a Huge Page request if the requested memory region is a multiple of 2 MB in size, or aligns at
   or aligns at 64 byte boundaries otherwise.

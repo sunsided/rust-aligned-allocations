@@ -126,13 +126,24 @@ impl Memory {
         }
     }
 
-    pub fn from_error(status: AllocResult) -> Self {
+    pub(crate) fn from_error(status: AllocResult) -> Self {
         assert_ne!(status, AllocResult::Ok);
         Memory {
             flags: 0,
             num_bytes: 0,
             address: null_mut(),
         }
+    }
+
+    /// Returns the number of bytes allocated.
+    pub fn len(&self) -> usize {
+        self.num_bytes
+    }
+
+    /// Returns whether this instance has zero bytes allocated.
+    pub fn is_empty(&self) -> bool {
+        debug_assert!(self.num_bytes > 0 || self.address == null_mut());
+        self.num_bytes == 0
     }
 }
 
@@ -148,6 +159,37 @@ impl Drop for Memory {
     }
 }
 
+// This is a simple macro named `say_hello`.
+macro_rules! impl_asref {
+    ($type:ident) => {
+        impl AsRef<$type> for Memory {
+            fn as_ref(&self) -> &$type {
+                unsafe { &*(self.address as *const $type) }
+            }
+        }
+
+        impl AsMut<$type> for Memory {
+            fn as_mut(&mut self) -> &mut $type {
+                unsafe { &mut *(self.address as *mut $type) }
+            }
+        }
+    };
+}
+
+impl_asref!(c_void);
+impl_asref!(i8);
+impl_asref!(u8);
+impl_asref!(i16);
+impl_asref!(u16);
+impl_asref!(i32);
+impl_asref!(u32);
+impl_asref!(i64);
+impl_asref!(u64);
+impl_asref!(isize);
+impl_asref!(usize);
+impl_asref!(f32);
+impl_asref!(f64);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,6 +204,8 @@ mod tests {
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
+        assert_eq!(memory.len(), SIZE);
+        assert!(!memory.is_empty());
         assert_eq!(
             memory.flags & ALLOC_FLAGS_HUGE_PAGES,
             ALLOC_FLAGS_HUGE_PAGES
@@ -179,6 +223,8 @@ mod tests {
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
+        assert_eq!(memory.len(), SIZE);
+        assert!(!memory.is_empty());
         assert_eq!(
             memory.flags & ALLOC_FLAGS_HUGE_PAGES,
             ALLOC_FLAGS_HUGE_PAGES
@@ -196,6 +242,8 @@ mod tests {
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
+        assert_eq!(memory.len(), SIZE);
+        assert!(!memory.is_empty());
         assert_eq!(
             memory.flags & ALLOC_FLAGS_HUGE_PAGES,
             ALLOC_FLAGS_HUGE_PAGES
@@ -209,6 +257,8 @@ mod tests {
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
+        assert_eq!(memory.len(), SIZE);
+        assert!(!memory.is_empty());
         assert_ne!(
             memory.flags & ALLOC_FLAGS_HUGE_PAGES,
             ALLOC_FLAGS_HUGE_PAGES
@@ -222,6 +272,8 @@ mod tests {
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
+        assert_eq!(memory.len(), SIZE);
+        assert!(!memory.is_empty());
         assert_ne!(
             memory.flags & ALLOC_FLAGS_HUGE_PAGES,
             ALLOC_FLAGS_HUGE_PAGES
@@ -235,6 +287,8 @@ mod tests {
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
+        assert_eq!(memory.len(), SIZE);
+        assert!(!memory.is_empty());
         assert_ne!(
             memory.flags & ALLOC_FLAGS_HUGE_PAGES,
             ALLOC_FLAGS_HUGE_PAGES
@@ -247,5 +301,33 @@ mod tests {
         let err = Memory::allocate(SIZE, true, true).expect_err("the allocation was empty");
 
         assert_eq!(err, AllocationError::EmptyAllocation);
+    }
+
+    #[test]
+    fn deref_works() {
+        const SIZE: usize = TWO_MEGABYTES * 2;
+        let mut memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
+
+        let addr: *mut u8 = memory.address as *mut _ as *mut u8;
+        unsafe {
+            *addr = 0x42;
+        }
+
+        let reference: &u8 = memory.as_ref();
+        let value = *reference;
+        assert_eq!(value, 0x42);
+    }
+
+    #[test]
+    fn deref_mut_works() {
+        const SIZE: usize = TWO_MEGABYTES * 2;
+        let mut memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
+
+        let addr: &mut f32 = memory.as_mut();
+        *addr = 1.234;
+
+        let reference: &f32 = memory.as_ref();
+        let value = *reference;
+        assert_eq!(value, 1.234);
     }
 }
