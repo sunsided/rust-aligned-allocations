@@ -18,6 +18,12 @@ lto = "fat"
 codegen-units = 1
 strip = "symbols"
 
+[features]
+default = ["ffi"]
+
+# Enables the generation of FFI bindings.
+ffi = ["dep:cbindgen"]
+
 [lib]
 name = "alloc_madvise"
 crate-type = ["cdylib", "rlib", "staticlib"]
@@ -26,4 +32,4 @@ crate-type = ["cdylib", "rlib", "staticlib"]
 libc = "0.2.139"
 
 [build-dependencies]
-cbindgen = "0.24.3"
+cbindgen = { version = "0.24.3", optional = true }

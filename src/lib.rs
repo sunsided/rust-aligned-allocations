@@ -1,3 +1,4 @@
+#[cfg(feature = "ffi")]
 mod ffi;
 
 mod alignment;

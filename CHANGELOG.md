@@ -8,6 +8,8 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Added `AsRef` and `AsMut` for primitive type slice mappings into `Memory`.
+- Added `ffi` create feature (enabled by default) to enable or disable
+  FFI binding generation.
 
 ## 0.2.0 - 2023-01-19
 
