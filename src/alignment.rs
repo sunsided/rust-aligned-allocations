@@ -21,6 +21,12 @@ pub struct AlignmentHint {
 ///
 /// In any other case, an alignment of 64 byte boundaries is produced, which
 /// should be optimal for both AVX-2 and AVX-512 operations.
+///
+/// ## Arguments
+/// * `num_bytes` - The number of bytes to allocate.
+///
+/// ## Returns
+/// An [`AlignmentHint`] outlining the suggested alignment.
 pub fn get_alignment(num_bytes: usize) -> AlignmentHint {
     if num_bytes == 0 {
         AlignmentHint {
