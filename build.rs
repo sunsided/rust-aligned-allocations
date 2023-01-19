@@ -27,7 +27,7 @@ fn main() {
 /// overridden by `cmake`, so we also need to check the `CARGO_TARGET_DIR`
 /// variable.
 fn target_dir() -> PathBuf {
-    if let Ok(target) = env::var("CARGO_TARGET_DIR") {
+    if let Ok(target) = env::var("OUT_DIR") {
         PathBuf::from(target)
     } else {
         PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("target")

@@ -1,7 +1,7 @@
 # Aligned Allocators
 
-This repository contains a set of memory allocators meant to be used
-by .NET P/Invoke to create aligned chunks of memory in an optimal fashion.
+A memory allocator for creating large aligned chunks of memory in an optimal fashion. This library is meant 
+to be used standalone or via FFI with the original use case being .NET P/Invoke.
 
 ## Build
 

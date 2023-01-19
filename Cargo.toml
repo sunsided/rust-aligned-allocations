@@ -1,19 +1,26 @@
 [package]
 name = "alloc-madvise"
-version = "0.2.0-alpha"
+version = "0.2.0"
+description = "A memory allocator for creating large aligned chunks of memory"
 authors = ["Markus Mayer <widemeadows@gmail.com>"]
+keywords = ["malloc", "madvise", "memory"]
+categories = ["memory-management"]
+homepage = "https://github.com/sunsided/rust-aligned-allocations"
+repository = "https://github.com/sunsided/rust-aligned-allocations"
+readme = "README.md"
 edition = "2021"
 rust-version = "1.66"
+license = "EUPL-1.2"
 build = "build.rs"
 
 [profile.release]
 lto = "fat"
 codegen-units = 1
-# strip = "symbols"
+strip = "symbols"
 
 [lib]
 name = "alloc_madvise"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib", "staticlib"]
 
 [dependencies]
 libc = "0.2.139"
