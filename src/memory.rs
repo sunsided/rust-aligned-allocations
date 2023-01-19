@@ -175,9 +175,9 @@ impl Drop for Memory {
     }
 }
 
-// This is a simple macro named `say_hello`.
+/// Implements AsRef and AsMut
 macro_rules! impl_asref {
-    ($type:ident) => {
+    ($type:ty) => {
         impl AsRef<$type> for Memory {
             fn as_ref(&self) -> &$type {
                 unsafe { &*self.address.cast() }
@@ -190,21 +190,16 @@ macro_rules! impl_asref {
             }
         }
     };
+    ($first:ty, $($rest:ty),+) => {
+        impl_asref!($first);
+        impl_asref!($($rest),+);
+    };
 }
 
 impl_asref!(c_void);
-impl_asref!(i8);
-impl_asref!(u8);
-impl_asref!(i16);
-impl_asref!(u16);
-impl_asref!(i32);
-impl_asref!(u32);
-impl_asref!(i64);
-impl_asref!(u64);
-impl_asref!(isize);
-impl_asref!(usize);
-impl_asref!(f32);
-impl_asref!(f64);
+impl_asref!(i8, u8, i16, u16, i32, u32, i64, u64);
+impl_asref!(isize, usize);
+impl_asref!(f32, f64);
 
 #[cfg(test)]
 mod tests {
