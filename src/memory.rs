@@ -158,6 +158,7 @@ impl Memory {
     }
 
     /// Returns the number of bytes allocated.
+    #[inline(always)]
     pub fn len(&self) -> usize {
         self.num_bytes
     }
@@ -194,6 +195,7 @@ impl Default for Memory {
 }
 
 impl Drop for Memory {
+    #[inline(always)]
     fn drop(&mut self) {
         self.free()
     }
@@ -203,6 +205,7 @@ impl Drop for Memory {
 macro_rules! impl_asref_slice {
     ($type:ty) => {
         impl AsRef<[$type]> for Memory {
+            #[inline(always)]
             fn as_ref(&self) -> &[$type] {
                 let ptr: *const $type = self.address.cast();
                 let len = self.num_bytes / std::mem::size_of::<$type>();
@@ -211,6 +214,7 @@ macro_rules! impl_asref_slice {
         }
 
         impl AsMut<[$type]> for Memory {
+            #[inline(always)]
             fn as_mut(&mut self) -> &mut [$type] {
                 let ptr: *mut $type = self.address.cast();
                 let len = self.num_bytes / std::mem::size_of::<$type>();
