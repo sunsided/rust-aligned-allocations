@@ -31,7 +31,7 @@ impl Into<AllocResult> for AllocationError {
     fn into(self) -> AllocResult {
         match self {
             AllocationError::EmptyAllocation => AllocResult::Empty,
-            AllocationError::InvalidAlignment(_) => AllocResult::InvalidAlignment
+            AllocationError::InvalidAlignment(_) => AllocResult::InvalidAlignment,
         }
     }
 }

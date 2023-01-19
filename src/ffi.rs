@@ -1,6 +1,6 @@
+use crate::alloc_result::AllocResult;
 use std::mem::ManuallyDrop;
 use std::ptr::null_mut;
-use crate::alloc_result::AllocResult;
 
 /// Information about the allocated memory.
 #[repr(C)]
@@ -38,7 +38,7 @@ pub unsafe extern "C" fn allocate_block(num_bytes: u32, sequential: bool, clear:
                 num_bytes: memory.num_bytes as u32,
                 address: memory.address,
             }
-        },
+        }
         Err(e) => {
             let result: AllocResult = e.into();
             Memory {
@@ -49,7 +49,6 @@ pub unsafe extern "C" fn allocate_block(num_bytes: u32, sequential: bool, clear:
             }
         }
     }
-
 }
 
 /// Frees memory of the specified number of bytes.

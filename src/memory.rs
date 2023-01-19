@@ -1,9 +1,9 @@
-use std::ffi::c_void;
-use std::ptr::{null_mut};
-use libc::madvise;
 use crate::alignment::get_alignment;
 use crate::alloc_free::{alloc_aligned, free_aligned};
-use crate::alloc_result::{AllocationError, AllocResult};
+use crate::alloc_result::{AllocResult, AllocationError};
+use libc::madvise;
+use std::ffi::c_void;
+use std::ptr::null_mut;
 
 /// No special instructions.
 const ALLOC_FLAGS_NONE: u32 = 0;
@@ -32,7 +32,11 @@ impl Memory {
     /// * `num_bytes` - The number of bytes to allocate.
     /// * `sequential` - Whether or not the memory access pattern is sequential mostly.
     /// * `clear` - Whether or not to zero out the allocated memory.
-    pub fn allocate(num_bytes: usize, sequential: bool, clear: bool) -> Result<Self, AllocationError> {
+    pub fn allocate(
+        num_bytes: usize,
+        sequential: bool,
+        clear: bool,
+    ) -> Result<Self, AllocationError> {
         if num_bytes == 0 {
             return Err(AllocationError::EmptyAllocation);
         }
@@ -62,7 +66,9 @@ impl Memory {
         if advice != 0 {
             // See https://www.man7.org/linux/man-pages/man2/madvise.2.html
             // SAFETY: `ptr` came from alloc_aligned(num_bytes, alignment)
-            unsafe { madvise(ptr, num_bytes, advice); }
+            unsafe {
+                madvise(ptr, num_bytes, advice);
+            }
         }
 
         Ok(Self::new(AllocResult::Ok, flags, num_bytes, ptr))
@@ -86,13 +92,17 @@ impl Memory {
 
             // See https://www.man7.org/linux/man-pages/man2/madvise.2.html
             // SAFETY: `ptr` came from alloc_aligned(num_bytes, alignment)
-            unsafe { madvise(self.address, self.num_bytes, libc::MADV_FREE); }
+            unsafe {
+                madvise(self.address, self.num_bytes, libc::MADV_FREE);
+            }
         }
 
         // SAFETY:
         // - `ptr` is checked for null before
         // - `num_bytes` and `alignment` are required to be correct by the caller
-        unsafe { free_aligned(ptr, self.num_bytes, alignment.alignment); }
+        unsafe {
+            free_aligned(ptr, self.num_bytes, alignment.alignment);
+        }
 
         // Zero out the fields.
         self.address = null_mut();
@@ -105,8 +115,10 @@ impl Memory {
         num_bytes: usize,
         address: *mut c_void,
     ) -> Self {
-        debug_assert!(status == AllocResult::Ok && address != null_mut() || address == null_mut(),
-            "Found null pointer when allocation status was okay");
+        debug_assert!(
+            status == AllocResult::Ok && address != null_mut() || address == null_mut(),
+            "Found null pointer when allocation status was okay"
+        );
         Memory {
             flags,
             num_bytes,
@@ -146,8 +158,7 @@ mod tests {
     #[test]
     fn alloc_4mb_is_2mb_aligned_hugepage() {
         const SIZE: usize = TWO_MEGABYTES * 2;
-        let memory = Memory::allocate(SIZE, true, true)
-            .expect("allocation failed");
+        let memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
@@ -164,8 +175,7 @@ mod tests {
     #[test]
     fn alloc_4mb_nonsequential_is_2mb_aligned_hugepage() {
         const SIZE: usize = TWO_MEGABYTES * 2;
-        let memory = Memory::allocate(SIZE, false, false)
-            .expect("allocation failed");
+        let memory = Memory::allocate(SIZE, false, false).expect("allocation failed");
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
@@ -182,8 +192,7 @@ mod tests {
     #[test]
     fn alloc_2mb_is_2mb_aligned_hugepage() {
         const SIZE: usize = TWO_MEGABYTES;
-        let memory = Memory::allocate(SIZE, true, true)
-            .expect("allocation failed");
+        let memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
@@ -196,8 +205,7 @@ mod tests {
     #[test]
     fn alloc_1mb_is_64b_aligned() {
         const SIZE: usize = TWO_MEGABYTES / 2;
-        let memory = Memory::allocate(SIZE, true, true)
-            .expect("allocation failed");
+        let memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
@@ -210,8 +218,7 @@ mod tests {
     #[test]
     fn alloc_63kb_is_64b_aligned() {
         const SIZE: usize = 63 * 1024;
-        let memory = Memory::allocate(SIZE, true, true)
-            .expect("allocation failed");
+        let memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
@@ -224,8 +231,7 @@ mod tests {
     #[test]
     fn alloc_64kb_is_64b_aligned() {
         const SIZE: usize = 64 * 1024;
-        let memory = Memory::allocate(SIZE, true, true)
-            .expect("allocation failed");
+        let memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
         assert_ne!(memory.address, null_mut());
         assert_eq!((memory.address as usize) % SIXTY_FOUR_BYTES, 0);
@@ -238,8 +244,7 @@ mod tests {
     #[test]
     fn alloc_0b_is_not_allocated() {
         const SIZE: usize = 0;
-        let err = Memory::allocate(SIZE, true, true)
-            .expect_err("the allocation was empty");
+        let err = Memory::allocate(SIZE, true, true).expect_err("the allocation was empty");
 
         assert_eq!(err, AllocationError::EmptyAllocation);
     }
