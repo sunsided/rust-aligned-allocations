@@ -7,8 +7,8 @@ to be used standalone or via FFI with the original use case being .NET P/Invoke.
 fn main() {
     const TWO_MEGABYTES: usize = 2 * 1024 * 1024;
     const SIZE: usize = TWO_MEGABYTES * 2;
-    
-    // Allocate 2 MiB of aligned, zeroed-out, sequential read memory.
+
+    // Allocate 4 MiB of aligned, zeroed-out, sequential read memory.
     // The memory will be automatically freed when it leaves scope.
     let memory = Memory::allocate(SIZE, true, true)
         .expect("allocation failed");
