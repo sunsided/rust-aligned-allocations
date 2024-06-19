@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 - 2024-06-19
+
+### Internal
+
+- Updated bindgen build dependencies.
+
 ## 0.3.0 - 2023-01-19
 
 ### Added
