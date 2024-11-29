@@ -32,4 +32,4 @@ crate-type = ["cdylib", "rlib", "staticlib"]
 libc = "0.2.155"
 
 [build-dependencies]
-cbindgen = { version = "0.26.0", optional = true }
+cbindgen = { version = "0.27.0", optional = true }
