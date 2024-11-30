@@ -149,7 +149,7 @@ impl Memory {
     ///
     /// The memory instance is required to be created by `allocate`.
     pub fn free(&mut self) {
-        if self.address == null_mut() {
+        if self.address.is_null() {
             return;
         }
 
@@ -187,7 +187,7 @@ impl Memory {
         address: *mut c_void,
     ) -> Self {
         debug_assert!(
-            status == AllocResult::Ok && address != null_mut() || address == null_mut(),
+            status == AllocResult::Ok && !address.is_null() || address.is_null(),
             "Found null pointer when allocation status was okay"
         );
         Memory {
@@ -214,7 +214,7 @@ impl Memory {
 
     /// Returns whether this instance has zero bytes allocated.
     pub fn is_empty(&self) -> bool {
-        debug_assert!(self.num_bytes > 0 || self.address == null_mut());
+        debug_assert!(self.num_bytes > 0 || self.address.is_null());
         self.num_bytes == 0
     }
 
@@ -457,7 +457,7 @@ mod tests {
         const SIZE: usize = TWO_MEGABYTES * 2;
         let mut memory = Memory::allocate(SIZE, true, true).expect("allocation failed");
 
-        let addr: *mut u8 = memory.as_ptr_mut() as *mut u8;
+        let addr: *mut u8 = memory.to_ptr_mut() as *mut u8;
         unsafe {
             *addr = 0x42;
         }

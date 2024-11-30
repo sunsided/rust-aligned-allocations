@@ -19,8 +19,10 @@ fn build_ffi_wrapper() {
         .display()
         .to_string();
 
-    let mut config = Config::default();
-    config.namespace = Some(String::from("ffi"));
+    let config = Config {
+        namespace: Some(String::from("ffi")),
+        ..Default::default()
+    };
 
     cbindgen::generate_with_config(&crate_dir, config)
         .unwrap()
