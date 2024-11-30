@@ -1,5 +1,12 @@
 # Aligned Allocators (`alloc-madvise`)
 
+[![Crates.io](https://img.shields.io/crates/v/alloc-madvise)](https://crates.io/crates/timelag)
+[![Crates.io](https://img.shields.io/crates/l/alloc-madvise)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/sunsided/rust-aligned-allocations/rust.yml)](https://github.com/sunsided/rust-aligned-allocations/actions/workflows/rust.yml)
+[![docs.rs](https://img.shields.io/docsrs/alloc-madvise)](https://docs.rs/alloc-madvise/)
+[![Safety Dance][safety-image]][safety-link]
+[![codecov](https://codecov.io/gh/sunsided/rust-aligned-allocations/graph/badge.svg?token=6CR3SYT3HT)](https://codecov.io/gh/sunsided/rust-aligned-allocations)
+
 A memory allocator for creating large aligned chunks of memory in an optimal fashion. This library is meant 
 to be used standalone or via FFI with the original use case being .NET P/Invoke.
 
@@ -98,3 +105,8 @@ void free_block(Memory memory);
 
 } // namespace ffi
 ```
+
+
+[safety-image]: https://img.shields.io/badge/unsafe-required-yellow.svg
+
+[safety-link]: https://github.com/rust-secure-code/safety-dance/
