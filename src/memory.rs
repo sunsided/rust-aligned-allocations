@@ -211,7 +211,7 @@ impl Memory {
     pub fn len(&self) -> usize {
         self.num_bytes
     }
-    
+
     /// Returns whether this instance has zero bytes allocated.
     pub fn is_empty(&self) -> bool {
         debug_assert!(self.num_bytes > 0 || self.address == null_mut());
@@ -229,7 +229,7 @@ impl Memory {
     ///
     /// ## Returns
     /// A valid pointer.
-    /// 
+    ///
     /// ## Safety
     /// If the memory is freed while the pointer is in use, access to the address pointed
     /// at is undefined behavior.
@@ -249,7 +249,7 @@ impl Memory {
     ///
     /// ## Returns
     /// A valid pointer.
-    /// 
+    ///
     /// ## Safety
     /// If the memory is freed while the pointer is in use, access to the address pointed
     /// at is undefined behavior.
@@ -263,7 +263,7 @@ impl Memory {
     /// ## Returns
     /// A pointer that is guaranteed to be non-null if the [`Memory`] was properly
     /// initialized (i.e., is non-default) and wasn't freed.
-    /// 
+    ///
     /// ## Safety
     /// If the memory is freed while the pointer is in use, access to the address pointed
     /// at is undefined behavior.

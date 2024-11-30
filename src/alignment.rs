@@ -2,7 +2,7 @@
 //! for allocations based on the number of bytes requested. It includes constants
 //! for common alignment sizes and a struct to represent alignment hints.
 //!
-//! The main functionality is provided by the [`AlignmentHint::new`](AlignmentHint::get) 
+//! The main functionality is provided by the [`AlignmentHint::new`](AlignmentHint::get)
 //! function, which returns an [`AlignmentHint`] indicating the suggested alignment and whether
 //! huge pages should be used.
 //!

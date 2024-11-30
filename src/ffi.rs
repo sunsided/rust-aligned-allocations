@@ -1,4 +1,3 @@
-
 //! This module provides FFI (Foreign Function Interface) bindings for memory allocation and deallocation.
 //!
 //! It includes functions to allocate and free memory blocks, as well as a structure to hold information

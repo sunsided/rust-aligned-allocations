@@ -1,4 +1,3 @@
-
 //! # alloc-madvise
 //!
 //! Rust-aligned-allocations provides aligned memory allocation utilities for Rust.
