@@ -1,3 +1,52 @@
+//! This module provides functionality for aligned memory allocation with support for huge pages and sequential access patterns.
+//!
+//! The `Memory` struct represents an allocated memory block with various allocation flags and methods for allocation and deallocation.
+//!
+//! # Constants
+//! - `ALLOC_FLAGS_NONE`: No special instructions.
+//! - `ALLOC_FLAGS_HUGE_PAGES`: Indicates that huge pages should be used.
+//! - `ALLOC_FLAGS_SEQUENTIAL`: Indicates that memory access is mainly sequential rather than random-access.
+//!
+//! # Structs
+//! - `Memory`: Represents an allocated memory block with methods for allocation, deallocation, and accessing the memory as slices.
+//!
+//! # Methods
+//! - `Memory::allocate`: Allocates memory of the specified number of bytes with optional sequential access pattern and zeroing out.
+//! - `Memory::free`: Frees the allocated memory.
+//! - `Memory::len`: Returns the number of bytes allocated.
+//! - `Memory::is_empty`: Returns whether this instance has zero bytes allocated.
+//! - `Memory::as_ptr`: Returns a pointer to the data buffer.
+//! - `Memory::as_ptr_mut`: Returns a mutable pointer to the data buffer.
+//!
+//! # Macros
+//! - `impl_asref_slice`: Implements `AsRef` and `AsMut` traits for slices of various types.
+//!
+//! # Examples
+//! ```
+//! # use alloc_madvise::Memory;
+//! const FOUR_MEGABYTES: usize = 4 * 1024 * 1024;
+//!
+//! // Allocate 2 MiB of aligned, zeroed-out, sequential read memory.
+//! // The memory will be automatically freed when it leaves scope.
+//! let mut memory = Memory::allocate(FOUR_MEGABYTES, true, true).unwrap();
+//!
+//! // Get a reference to a mutable slice.
+//! let data: &mut [f32] = memory.as_mut();
+//! data[0] = 1.234;
+//! data[1] = 5.678;
+//!
+//! // Get a reference to an immutable slice.
+//! let reference: &[f32] = memory.as_ref();
+//! assert_eq!(reference[0], 1.234);
+//! assert_eq!(reference[1], 5.678);
+//! assert_eq!(reference[2], 0.0);
+//! assert_eq!(reference.len(), memory.len() / std::mem::size_of::<f32>());
+//! ```
+//!
+//! # Safety
+//! - The `madvise` function is used to give advice about the use of memory. The safety of this function relies on the correctness of the pointer and size provided.
+//! - The `free` method ensures that the memory is properly deallocated and the fields are zeroed out to prevent use-after-free errors.
+
 use crate::alignment::AlignmentHint;
 use crate::alloc_free::{alloc_aligned, free_aligned};
 use crate::alloc_result::{AllocResult, AllocationError};
