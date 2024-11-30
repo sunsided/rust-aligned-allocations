@@ -52,7 +52,7 @@ use crate::alloc_free::{alloc_aligned, free_aligned};
 use crate::alloc_result::{AllocResult, AllocationError};
 use libc::madvise;
 use std::ffi::c_void;
-use std::ptr::null_mut;
+use std::ptr::{null_mut, NonNull};
 
 /// No special instructions.
 const ALLOC_FLAGS_NONE: u32 = 0;
@@ -211,29 +211,86 @@ impl Memory {
     pub fn len(&self) -> usize {
         self.num_bytes
     }
-
+    
     /// Returns whether this instance has zero bytes allocated.
     pub fn is_empty(&self) -> bool {
         debug_assert!(self.num_bytes > 0 || self.address == null_mut());
         self.num_bytes == 0
     }
 
-    /// Returns a pointer to the data buffer.
+    /// See [`Memory::to_ptr_const`] or [`Memory::to_ptr`].
+    #[inline(always)]
+    #[deprecated(note = "Use to_const_ptr or to_ptr instead", since = "0.5.0")]
+    pub fn as_ptr(&self) -> *const c_void {
+        self.to_ptr_const()
+    }
+
+    /// Returns a pointer to the constant data buffer.
     ///
     /// ## Returns
     /// A valid pointer.
+    /// 
+    /// ## Safety
+    /// If the memory is freed while the pointer is in use, access to the address pointed
+    /// at is undefined behavior.
     #[inline(always)]
-    pub fn as_ptr(&self) -> *const c_void {
+    pub fn to_ptr_const(&self) -> *const c_void {
         self.address.cast_const()
     }
 
-    /// Returns a mutable pointer to the data buffer.
+    /// See [`Memory::to_ptr_mut`] or [`Memory::to_ptr`].
+    #[inline(always)]
+    #[deprecated(note = "Use to_ptr_mut or to_ptr instead", since = "0.5.0")]
+    pub fn as_ptr_mut(&mut self) -> *mut c_void {
+        self.to_ptr_mut()
+    }
+
+    /// Returns a mutable pointer to the mutable data buffer.
     ///
     /// ## Returns
     /// A valid pointer.
+    /// 
+    /// ## Safety
+    /// If the memory is freed while the pointer is in use, access to the address pointed
+    /// at is undefined behavior.
     #[inline(always)]
-    pub fn as_ptr_mut(&mut self) -> *mut c_void {
+    pub fn to_ptr_mut(&mut self) -> *mut c_void {
         self.address
+    }
+
+    /// Returns a non-null pointer to the data buffer.
+    ///
+    /// ## Returns
+    /// A pointer that is guaranteed to be non-null if the [`Memory`] was properly
+    /// initialized (i.e., is non-default) and wasn't freed.
+    /// 
+    /// ## Safety
+    /// If the memory is freed while the pointer is in use, access to the address pointed
+    /// at is undefined behavior.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use alloc_madvise::{Memory, AllocationError};
+    ///
+    /// fn main() -> Result<(), AllocationError> {
+    ///     // Allocate 1024 bytes aligned to 64 bytes
+    ///     const SIZE: usize = 1024;
+    ///     const SEQUENTIAL: bool = true;
+    ///     const CLEAR: bool = true;
+    ///     let memory = Memory::allocate(SIZE, SEQUENTIAL, CLEAR)?;
+    ///     let ptr = memory.to_ptr().expect("pointer was allocated");
+    ///     
+    ///     // Use the allocated memory...
+    ///     assert_ne!(ptr.as_ptr(), std::ptr::null_mut());
+    ///     
+    ///     // Memory is automatically freed when dropped
+    ///     Ok(())
+    /// }
+    /// ```
+    #[inline(always)]
+    pub fn to_ptr(&self) -> Option<NonNull<c_void>> {
+        NonNull::new(self.address)
     }
 }
 

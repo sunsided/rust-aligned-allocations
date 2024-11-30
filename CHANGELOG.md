@@ -10,6 +10,13 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Provided `From<Memory>` and `From<AllocationError>` implementations to
   replace the previous `Into` impls.
 - Explicitly state `allow(unsafe_code)` for the library now.
+- Added `Memory::to_ptr` returning an `Option<NonNull<c_void>>`.
+
+### Changed
+
+- The `Memory::as_ptr` and `Memory::as_ptr_mut` functions are now
+  deprecated in favor of `Memory::to_ptr_const` and `Memory::to_ptr_mut`,
+  as well as `Memory::to_ptr`.
 
 ### Internal
 
