@@ -1,3 +1,23 @@
+
+//! This module provides FFI (Foreign Function Interface) bindings for memory allocation and deallocation.
+//!
+//! It includes functions to allocate and free memory blocks, as well as a structure to hold information
+//! about the allocated memory. The module also provides a function to get the version of the library.
+//!
+//! # Structures
+//!
+//! - [`Memory`]: Holds information about the allocated memory, including status, flags, number of bytes, and address.
+//!
+//! # Functions
+//!
+//! - `version`: Returns a pointer to a C string containing the version of the library.
+//! - `allocate_block`: Allocates a memory block of the specified number of bytes, with options for sequential and clear allocation.
+//! - `free_block`: Frees a previously allocated memory block.
+//!
+//! # Safety
+//!
+//! All functions in this module are marked as `unsafe` because they involve raw pointers and FFI, which can lead to undefined behavior if misused.
+
 use crate::alloc_result::AllocResult;
 use std::mem::ManuallyDrop;
 use std::ptr::null_mut;

@@ -1,3 +1,5 @@
+//! Provides the [`AllocationError`] struct.
+
 use std::alloc::LayoutError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -21,7 +23,7 @@ impl From<LayoutError> for AllocationError {
 impl Display for AllocationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            AllocationError::EmptyAllocation => write!(f, "zero-byte allocation"),
+            AllocationError::EmptyAllocation => f.write_str("zero-byte allocation"),
             AllocationError::InvalidAlignment(e) => write!(f, "invalid memory layout: {e}"),
         }
     }
