@@ -9,7 +9,7 @@ homepage = "https://github.com/sunsided/rust-aligned-allocations"
 repository = "https://github.com/sunsided/rust-aligned-allocations"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.66"
+rust-version = "1.74"
 license = "EUPL-1.2"
 build = "build.rs"
 

@@ -17,6 +17,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The `Memory::as_ptr` and `Memory::as_ptr_mut` functions are now
   deprecated in favor of `Memory::to_ptr_const` and `Memory::to_ptr_mut`,
   as well as `Memory::to_ptr`.
+- The MSRV was raised to 1.74 due to `cbindgen` requirements.
 
 ### Internal
 
