@@ -29,7 +29,7 @@ pub fn alloc_aligned(
     .expect("ptr is null")
     .cast::<std::ffi::c_void>();
 
-    return Ok(address);
+    Ok(address)
 }
 
 /// # Safety

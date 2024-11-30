@@ -27,9 +27,9 @@ impl Display for AllocationError {
     }
 }
 
-impl Into<AllocResult> for AllocationError {
-    fn into(self) -> AllocResult {
-        match self {
+impl From<AllocationError> for AllocResult {
+    fn from(val: AllocationError) -> Self {
+        match val {
             AllocationError::EmptyAllocation => AllocResult::Empty,
             AllocationError::InvalidAlignment(_) => AllocResult::InvalidAlignment,
         }

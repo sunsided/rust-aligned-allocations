@@ -61,13 +61,13 @@ pub unsafe extern "C" fn free_block(memory: Memory) {
     wrapped.free();
 }
 
-impl Into<crate::memory::Memory> for Memory {
-    fn into(self) -> crate::memory::Memory {
+impl From<Memory> for crate::memory::Memory {
+    fn from(val: Memory) -> Self {
         crate::memory::Memory::new(
-            AllocResult::from(self.status),
-            self.flags,
-            self.num_bytes as usize,
-            self.address,
+            AllocResult::from(val.status),
+            val.flags,
+            val.num_bytes as usize,
+            val.address,
         )
     }
 }

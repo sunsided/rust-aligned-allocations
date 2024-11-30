@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Provided `From<Memory>` and `From<AllocationError>` implementations to
+  replace the previous `Into` impls.
+
+### Internal
+
+- Upgraded `cbindgen` from 0.26.0 to 0.27.0.
+
 ## 0.4.0 - 2024-06-19
 
 ### Internal

@@ -54,41 +54,41 @@ mod tests {
     fn get_alignment_4mb_is_2mb_aligned_hugepage() {
         let memory = get_alignment(2 * TWO_MEGABYTES);
         assert_eq!(memory.alignment, TWO_MEGABYTES);
-        assert_eq!(memory.use_huge_pages, true);
+        assert!(memory.use_huge_pages);
     }
 
     #[test]
     fn get_alignment_2mb_is_2mb_aligned_hugepage() {
         let memory = get_alignment(TWO_MEGABYTES);
         assert_eq!(memory.alignment, TWO_MEGABYTES);
-        assert_eq!(memory.use_huge_pages, true);
+        assert!(memory.use_huge_pages);
     }
 
     #[test]
     fn get_alignment_1mb_is_64b_aligned() {
         let memory = get_alignment(TWO_MEGABYTES / 2);
         assert_eq!(memory.alignment, SIXTY_FOUR_BYTES);
-        assert_eq!(memory.use_huge_pages, false);
+        assert!(!memory.use_huge_pages);
     }
 
     #[test]
     fn get_alignment_63kb_is_64b_aligned() {
         let memory = get_alignment(63 * 1024);
         assert_eq!(memory.alignment, SIXTY_FOUR_BYTES);
-        assert_eq!(memory.use_huge_pages, false);
+        assert!(!memory.use_huge_pages);
     }
 
     #[test]
     fn get_alignment_64kb_is_64b_aligned() {
         let memory = get_alignment(64 * 1024);
         assert_eq!(memory.alignment, SIXTY_FOUR_BYTES);
-        assert_eq!(memory.use_huge_pages, false);
+        assert!(!memory.use_huge_pages);
     }
 
     #[test]
     fn get_alignment_0b_is_0b_aligned() {
         let memory = get_alignment(0);
         assert_eq!(memory.alignment, ZERO_BYTES);
-        assert_eq!(memory.use_huge_pages, false);
+        assert!(!memory.use_huge_pages);
     }
 }
