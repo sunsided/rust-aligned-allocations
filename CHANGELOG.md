@@ -14,6 +14,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Internal
 
 - Upgraded `cbindgen` from 0.26.0 to 0.27.0.
+- Rework `get_alignment_hint` into `AlignmentHint::new`.
 
 ## 0.4.0 - 2024-06-19
 

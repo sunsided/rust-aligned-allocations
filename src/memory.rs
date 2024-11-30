@@ -1,4 +1,4 @@
-use crate::alignment::get_alignment;
+use crate::alignment::AlignmentHint;
 use crate::alloc_free::{alloc_aligned, free_aligned};
 use crate::alloc_result::{AllocResult, AllocationError};
 use libc::madvise;
@@ -63,7 +63,7 @@ impl Memory {
             return Err(AllocationError::EmptyAllocation);
         }
 
-        let alignment = get_alignment(num_bytes);
+        let alignment = AlignmentHint::new(num_bytes);
         let ptr = alloc_aligned(num_bytes, alignment.alignment, clear)?;
 
         let ptr: *mut c_void = ptr.as_ptr().cast::<c_void>();
@@ -104,7 +104,7 @@ impl Memory {
             return;
         }
 
-        let alignment = get_alignment(self.num_bytes);
+        let alignment = AlignmentHint::new(self.num_bytes);
 
         debug_assert_ne!(self.address, null_mut());
         let ptr = core::ptr::NonNull::new(self.address);
