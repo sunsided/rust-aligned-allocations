@@ -90,3 +90,48 @@ impl From<Memory> for crate::memory::Memory {
         )
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_version() {
+        unsafe {
+            let version_ptr = version();
+            let version_cstr = std::ffi::CStr::from_ptr(version_ptr);
+            assert_eq!(version_cstr.to_str().unwrap(), env!("CARGO_PKG_VERSION"));
+        }
+    }
+
+    #[test]
+    fn test_allocate_block_success() {
+        unsafe {
+            let memory = allocate_block(1024, false, false);
+            assert_eq!(memory.status, AllocResult::Ok as u32);
+            assert_eq!(memory.num_bytes, 1024);
+            assert!(!memory.address.is_null());
+            free_block(memory);
+        }
+    }
+
+    #[test]
+    fn test_allocate_block_failure() {
+        unsafe {
+            let memory = allocate_block(0, false, false);
+            assert_ne!(memory.status, AllocResult::Ok as u32);
+            assert_eq!(memory.num_bytes, 0);
+            assert!(memory.address.is_null());
+        }
+    }
+
+    #[test]
+    fn test_free_block() {
+        unsafe {
+            let memory = allocate_block(1024, false, false);
+            assert_eq!(memory.status, AllocResult::Ok as u32);
+            assert_eq!(memory.num_bytes, 1024);
+            assert!(!memory.address.is_null());
+            free_block(memory);
+        }
+    }
+}

@@ -1,16 +1,24 @@
-# Aligned Allocators
+# Aligned Allocators (`alloc-madvise`)
 
 A memory allocator for creating large aligned chunks of memory in an optimal fashion. This library is meant 
 to be used standalone or via FFI with the original use case being .NET P/Invoke.
+
+Memory is dynamically aligned to the most efficient boundaries based on size,
+ensuring that AVX workloads can use use aligned loads and stores. Huge Page support
+is automatically enabled based on the allocation size. If the flag for sequential access is provided,
+memory will be m-advised for fast scans rather than random accesses; clearing out
+the memory is optional.
 
 ```rust
 fn main() {
     const TWO_MEGABYTES: usize = 2 * 1024 * 1024;
     const SIZE: usize = TWO_MEGABYTES * 2;
+    const SEQUENTIAL: bool = true;
+    const CLEAR: bool = true;
 
     // Allocate 4 MiB of aligned, zeroed-out, sequential read memory.
     // The memory will be automatically freed when it leaves scope.
-    let memory = Memory::allocate(SIZE, true, true)
+    let memory = Memory::allocate(SIZE, SEQUENTIAL, CLEAR)
         .expect("allocation failed");
 
     assert_ne!(memory.address, std::ptr::null_mut());
