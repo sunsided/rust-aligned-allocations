@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 #[cfg(feature = "ffi")]
 mod ffi;
 

@@ -29,7 +29,7 @@ name = "alloc_madvise"
 crate-type = ["cdylib", "rlib", "staticlib"]
 
 [dependencies]
-libc = "0.2.155"
+libc = "0.2.167"
 
 [build-dependencies]
 cbindgen = { version = "0.27.0", optional = true }

@@ -9,6 +9,7 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Provided `From<Memory>` and `From<AllocationError>` implementations to
   replace the previous `Into` impls.
+- Explicitly state `allow(unsafe_code)` for the library now.
 
 ### Internal
 
