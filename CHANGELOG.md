@@ -3,7 +3,9 @@
 All notable changes to this project will be documented in this file.
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.5.0] - 2024-11-30
+
+[0.5.0]: https://github.com/sunsided/rust-aligned-allocations/releases/tag/v0.5.0
 
 ### Added
 
@@ -26,11 +28,15 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.4.0 - 2024-06-19
 
+[0.4.0]: https://github.com/sunsided/rust-aligned-allocations/releases/tag/v0.4.0
+
 ### Internal
 
 - Updated bindgen build dependencies.
 
 ## 0.3.0 - 2023-01-19
+
+[0.3.0]: https://github.com/sunsided/rust-aligned-allocations/releases/tag/v0.3.0
 
 ### Added
 
@@ -39,6 +45,8 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   FFI binding generation.
 
 ## 0.2.0 - 2023-01-19
+
+[0.2.0]: https://github.com/sunsided/rust-aligned-allocations/releases/tag/v0.2.0
 
 ### Added
 
