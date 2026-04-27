@@ -29,7 +29,7 @@ pub struct Memory {
     /// Allocation flags. Used internally when calling free.
     pub flags: u32,
     /// The number of allocated bytes. Used internally when calling free.
-    pub num_bytes: u32,
+    pub num_bytes: usize,
     /// The address of the allocated memory.
     pub address: *mut std::ffi::c_void,
 }
@@ -46,15 +46,21 @@ pub unsafe extern "C" fn version() -> *const libc::c_char {
 ///
 /// The optimal alignment will be determined by the number of bytes provided.
 /// If the amount of bytes is a multiple of 2MB, Huge/Large Page support is enabled.
+///
+/// # Safety
+///
+/// This function involves raw memory allocation and FFI. The caller must ensure
+/// that every successful allocation is paired with a call to `free_block` to
+/// prevent memory leaks.
 #[no_mangle]
-pub unsafe extern "C" fn allocate_block(num_bytes: u32, sequential: bool, clear: bool) -> Memory {
-    match crate::memory::Memory::allocate(num_bytes as usize, sequential, clear) {
+pub unsafe extern "C" fn allocate_block(num_bytes: usize, sequential: bool, clear: bool) -> Memory {
+    match crate::memory::Memory::allocate(num_bytes, sequential, clear) {
         Ok(memory) => {
             let memory = ManuallyDrop::new(memory);
             Memory {
                 status: AllocResult::Ok as u32,
                 flags: memory.flags,
-                num_bytes: memory.num_bytes as u32,
+                num_bytes: memory.num_bytes,
                 address: memory.address,
             }
         }
@@ -85,7 +91,7 @@ impl From<Memory> for crate::memory::Memory {
         crate::memory::Memory::new(
             AllocResult::from(val.status),
             val.flags,
-            val.num_bytes as usize,
+            val.num_bytes,
             val.address,
         )
     }

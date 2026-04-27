@@ -97,10 +97,14 @@ pub unsafe fn free_aligned(
         return;
     };
 
-    let layout = alloc::Layout::from_size_align(num_bytes, alignment).unwrap_or_else(|err| {
-        // Shouldn't happen if the layout is the same as on alloc.
-        panic!("Memory layout error: {}", err)
-    });
+    let layout = match alloc::Layout::from_size_align(num_bytes, alignment) {
+        Ok(layout) => layout,
+        Err(_) => {
+            // Shouldn't happen if the layout is the same as on alloc.
+            // Skip deallocation to avoid undefined behavior.
+            return;
+        }
+    };
 
     // SAFETY: `ptr` came from alloc::alloc(layout);
     alloc::dealloc(ptr.cast::<u8>().as_ptr(), layout);

@@ -17,6 +17,8 @@ memory will be m-advised for fast scans rather than random accesses; clearing ou
 the memory is optional.
 
 ```rust
+use alloc_madvise::Memory;
+
 fn main() {
     const TWO_MEGABYTES: usize = 2 * 1024 * 1024;
     const SIZE: usize = TWO_MEGABYTES * 2;
@@ -28,8 +30,8 @@ fn main() {
     let memory = Memory::allocate(SIZE, SEQUENTIAL, CLEAR)
         .expect("allocation failed");
 
-    assert_ne!(memory.address, std::ptr::null_mut());
-    assert_eq!((memory.address as usize) % TWO_MEGABYTES, 0);
+    assert!(!memory.to_ptr().unwrap().as_ptr().is_null());
+    assert_eq!((memory.to_ptr().unwrap().as_ptr() as usize) % TWO_MEGABYTES, 0);
 
     // Get a reference to a mutable slice.
     let data: &mut [f32] = memory.as_mut();

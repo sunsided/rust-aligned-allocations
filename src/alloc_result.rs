@@ -1,9 +1,10 @@
-//! Provides the [`AllocationError`] struct.
+//! Provides the [`AllocationError`] type.
 
 use std::alloc::LayoutError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+/// Errors that can occur during memory allocation.
 #[derive(Debug, PartialEq)]
 pub enum AllocationError {
     /// An allocation of zero bytes was attempted.
@@ -52,7 +53,7 @@ impl From<u32> for AllocResult {
             0 => AllocResult::Ok,
             1 => AllocResult::Empty,
             2 => AllocResult::InvalidAlignment,
-            _ => panic!(),
+            _ => panic!("Unknown AllocResult value: {value}"),
         }
     }
 }

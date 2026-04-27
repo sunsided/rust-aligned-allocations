@@ -39,7 +39,6 @@ impl AlignmentHint {
     ///
     /// ## Returns
     /// An [`AlignmentHint`] outlining the suggested alignment.
-    #[inline(always)]
     pub fn new(num_bytes: usize) -> Self {
         if num_bytes == 0 {
             AlignmentHint {

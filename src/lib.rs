@@ -33,7 +33,7 @@
 //!
 //! # Features
 //!
-//! - `ffi`: Enables FFI bindings for C interoperability (disabled by default)
+//! - `ffi`: Enables FFI bindings for C interoperability (enabled by default)
 #![allow(unsafe_code)]
 
 #[cfg(feature = "ffi")]

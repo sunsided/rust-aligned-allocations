@@ -1,4 +1,13 @@
-//! This module provides functionality for aligned memory allocation with support for huge pages and sequential access patterns.
+//! # Platform Support
+//!
+//! This crate uses `madvise(2)` for memory hints, which is a POSIX/Linux-specific system call.
+//! The following advice flags are used:
+//!
+//! - `MADV_SEQUENTIAL`: Hints that memory will be accessed sequentially
+//! - `MADV_HUGEPAGE`: Hints to use transparent huge pages
+//!
+//! On non-Linux platforms (macOS, Windows), these calls may be no-ops or behave differently.
+//! For Windows support, consider using platform-specific allocation APIs directly.
 //!
 //! The `Memory` struct represents an allocated memory block with various allocation flags and methods for allocation and deallocation.
 //!
@@ -63,6 +72,55 @@ const ALLOC_FLAGS_HUGE_PAGES: u32 = 1 << 0;
 /// Indicates that memory access is mainly sequential rather than random-access.
 const ALLOC_FLAGS_SEQUENTIAL: u32 = 1 << 1;
 
+/// Configuration for memory allocation.
+///
+/// # Example
+/// ```
+/// use alloc_madvise::Memory;
+///
+/// let memory = Memory::builder(1024)
+///     .sequential()
+///     .zeroed()
+///     .allocate()
+///     .expect("allocation failed");
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct AllocationConfig {
+    num_bytes: usize,
+    sequential: bool,
+    zeroed: bool,
+}
+
+impl AllocationConfig {
+    /// Creates a new allocation configuration for the given number of bytes.
+    pub fn new(num_bytes: usize) -> Self {
+        Self {
+            num_bytes,
+            sequential: false,
+            zeroed: false,
+        }
+    }
+
+    /// Enables sequential access pattern hint for `madvise`.
+    #[must_use]
+    pub fn sequential(mut self) -> Self {
+        self.sequential = true;
+        self
+    }
+
+    /// Enables zeroing out the allocated memory.
+    #[must_use]
+    pub fn zeroed(mut self) -> Self {
+        self.zeroed = true;
+        self
+    }
+
+    /// Performs the allocation with this configuration.
+    pub fn allocate(self) -> Result<Memory, AllocationError> {
+        Memory::allocate(self.num_bytes, self.sequential, self.zeroed)
+    }
+}
+
 /// Allocated memory.
 ///
 /// ## Example
@@ -94,6 +152,22 @@ pub struct Memory {
 }
 
 impl Memory {
+    /// Creates a builder for configuring memory allocation.
+    ///
+    /// # Example
+    /// ```
+    /// use alloc_madvise::Memory;
+    ///
+    /// let memory = Memory::builder(1024)
+    ///     .sequential()
+    ///     .zeroed()
+    ///     .allocate()
+    ///     .expect("allocation failed");
+    /// ```
+    pub fn builder(num_bytes: usize) -> AllocationConfig {
+        AllocationConfig::new(num_bytes)
+    }
+
     /// Allocates memory of the specified number of bytes.
     ///
     /// The optimal alignment will be determined by the number of bytes provided.
@@ -137,6 +211,10 @@ impl Memory {
         if advice != 0 {
             // See https://www.man7.org/linux/man-pages/man2/madvise.2.html
             // SAFETY: `ptr` came from alloc_aligned(num_bytes, alignment)
+            //
+            // Note: madvise() returns advisory hints. Failures are non-fatal
+            // (e.g., huge pages not configured, unsupported advice on some kernels).
+            // We intentionally ignore the return value.
             unsafe {
                 madvise(ptr, num_bytes, advice);
             }
@@ -187,8 +265,8 @@ impl Memory {
         address: *mut c_void,
     ) -> Self {
         debug_assert!(
-            status == AllocResult::Ok && !address.is_null() || address.is_null(),
-            "Found null pointer when allocation status was okay"
+            (status == AllocResult::Ok) != address.is_null(),
+            "Allocation status and pointer nullness must agree"
         );
         Memory {
             flags,
@@ -207,7 +285,6 @@ impl Memory {
     }
 
     /// Returns the number of bytes allocated.
-    #[inline(always)]
     pub fn len(&self) -> usize {
         self.num_bytes
     }
@@ -219,7 +296,6 @@ impl Memory {
     }
 
     /// See [`Memory::to_ptr_const`] or [`Memory::to_ptr`].
-    #[inline(always)]
     #[deprecated(note = "Use to_const_ptr or to_ptr instead", since = "0.5.0")]
     pub fn as_ptr(&self) -> *const c_void {
         self.to_ptr_const()
@@ -233,13 +309,11 @@ impl Memory {
     /// ## Safety
     /// If the memory is freed while the pointer is in use, access to the address pointed
     /// at is undefined behavior.
-    #[inline(always)]
     pub fn to_ptr_const(&self) -> *const c_void {
         self.address.cast_const()
     }
 
     /// See [`Memory::to_ptr_mut`] or [`Memory::to_ptr`].
-    #[inline(always)]
     #[deprecated(note = "Use to_ptr_mut or to_ptr instead", since = "0.5.0")]
     pub fn as_ptr_mut(&mut self) -> *mut c_void {
         self.to_ptr_mut()
@@ -253,7 +327,6 @@ impl Memory {
     /// ## Safety
     /// If the memory is freed while the pointer is in use, access to the address pointed
     /// at is undefined behavior.
-    #[inline(always)]
     pub fn to_ptr_mut(&mut self) -> *mut c_void {
         self.address
     }
@@ -288,7 +361,6 @@ impl Memory {
     ///     Ok(())
     /// }
     /// ```
-    #[inline(always)]
     pub fn to_ptr(&self) -> Option<NonNull<c_void>> {
         NonNull::new(self.address)
     }
@@ -301,17 +373,21 @@ impl Default for Memory {
 }
 
 impl Drop for Memory {
-    #[inline(always)]
     fn drop(&mut self) {
         self.free()
     }
 }
 
+// SAFETY: Memory owns its allocation and provides thread-safe access:
+// - Shared references give read-only access (safe for concurrent reads)
+// - Mutable references give exclusive write access (enforced by borrow checker)
+unsafe impl Send for Memory {}
+unsafe impl Sync for Memory {}
+
 /// Implements AsRef and AsMut
 macro_rules! impl_asref_slice {
     ($type:ty) => {
         impl AsRef<[$type]> for Memory {
-            #[inline(always)]
             fn as_ref(&self) -> &[$type] {
                 let ptr: *const $type = self.address.cast();
                 let len = self.num_bytes / std::mem::size_of::<$type>();
@@ -320,7 +396,6 @@ macro_rules! impl_asref_slice {
         }
 
         impl AsMut<[$type]> for Memory {
-            #[inline(always)]
             fn as_mut(&mut self) -> &mut [$type] {
                 let ptr: *mut $type = self.address.cast();
                 let len = self.num_bytes / std::mem::size_of::<$type>();
@@ -482,5 +557,52 @@ mod tests {
         assert_eq!(reference[1], 5.678);
         assert_eq!(reference[2], 0.0);
         assert_eq!(reference.len(), memory.len() / std::mem::size_of::<f32>());
+    }
+
+    #[test]
+    fn default_is_empty() {
+        let memory = Memory::default();
+        assert!(memory.is_empty());
+        assert_eq!(memory.len(), 0);
+        assert!(memory.to_ptr().is_none());
+    }
+
+    #[test]
+    fn default_free_is_noop() {
+        let mut memory = Memory::default();
+        memory.free(); // should not panic
+        assert!(memory.is_empty());
+    }
+
+    #[test]
+    fn double_free_is_noop() {
+        const SIZE: usize = 1024;
+        let mut memory = Memory::allocate(SIZE, false, false).expect("allocation failed");
+        memory.free();
+        memory.free(); // second free should be a no-op
+        assert!(memory.is_empty());
+        assert!(memory.to_ptr().is_none());
+    }
+
+    #[test]
+    fn builder_api_works() {
+        const SIZE: usize = 1024;
+        let memory = Memory::builder(SIZE)
+            .sequential()
+            .zeroed()
+            .allocate()
+            .expect("allocation failed");
+
+        assert_eq!(memory.len(), SIZE);
+        assert!(!memory.is_empty());
+        assert!(memory.to_ptr().is_some());
+    }
+
+    #[test]
+    fn memory_is_send_and_sync() {
+        fn assert_send<T: Send>() {}
+        fn assert_sync<T: Sync>() {}
+        assert_send::<Memory>();
+        assert_sync::<Memory>();
     }
 }
