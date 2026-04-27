@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-27
+
+[0.6.0]: https://github.com/sunsided/rust-aligned-allocations/releases/tag/v0.6.0
+
+### Added
+
+- Added `AllocationConfig` builder struct for fluent allocation configuration.
+- Added `Memory::builder()` method to create an `AllocationConfig`.
+- Implemented `Send` and `Sync` for `Memory`.
+- Added platform support documentation covering `madvise(2)` usage and Linux-specific behavior.
+
+### Changed
+
+- `free_aligned` no longer panics on invalid layout; returns early to avoid undefined behavior.
+- `allocate_block` FFI function signature changed: `num_bytes` parameter from `u32` to `usize`.
+- `Memory.num_bytes` FFI field changed from `u32` to `usize`.
+- Removed `#[inline(always)]` attributes from public functions to let the compiler decide.
+- Improved `From<u32> for AllocResult` panic message to include the unknown value.
+- Clarified `Memory::new` debug assertion logic.
+- Corrected library doc comment: `ffi` feature is enabled by default.
+- Added doc comment to `AllocationError` enum.
+
 ## [0.5.0] - 2024-11-30
 
 [0.5.0]: https://github.com/sunsided/rust-aligned-allocations/releases/tag/v0.5.0
